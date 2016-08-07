@@ -17,6 +17,8 @@ Search Architecture:
    - Shares a global lock for map parsing
 '''
 
+import os
+import sys
 import logging
 import time
 import math
@@ -28,6 +30,7 @@ from queue import Queue, Empty
 from pgoapi import PGoApi
 from pgoapi.utilities import f2i
 from pgoapi import utilities as util
+from pgoapi.exceptions import AuthException
 
 from . import config
 from .models import parse_map
@@ -104,7 +107,7 @@ def fake_search_loop():
 
 
 # The main search loop that keeps an eye on the over all process
-def search_overseer_thread(args, new_location_queue, pause_bit):
+def search_overseer_thread(args, new_location_queue, pause_bit, encryption_lib_path):
 
     log.info('Search overseer starting')
 
@@ -117,7 +120,8 @@ def search_overseer_thread(args, new_location_queue, pause_bit):
         log.debug('Starting search worker thread %d for user %s', i, account['username'])
         t = Thread(target=search_worker_thread,
                    name='search_worker_{}'.format(i),
-                   args=(args, account, search_items_queue, parse_lock))
+                   args=(args, account, search_items_queue, parse_lock,
+                       encryption_lib_path))
         t.daemon = True
         t.start()
 
@@ -170,7 +174,7 @@ def search_overseer_thread(args, new_location_queue, pause_bit):
         time.sleep(1)
 
 
-def search_worker_thread(args, account, search_items_queue, parse_lock):
+def search_worker_thread(args, account, search_items_queue, parse_lock, encryption_lib_path):
 
     log.debug('Search worker thread starting')
 
@@ -214,6 +218,8 @@ def search_worker_thread(args, account, search_items_queue, parse_lock):
                     # Ok, let's get started -- check our login status
                     check_login(args, account, api, step_location)
 
+                    api.activate_signature(encryption_lib_path)
+
                     # Make the actual request (finally!)
                     response_dict = map_request(api, step_location)
 
@@ -254,13 +260,18 @@ def check_login(args, account, api, position):
 
     # Try to login (a few times, but don't get stuck here)
     i = 0
-    while not api.login(account['auth_service'], account['username'], account['password'], position[0], position[1], position[2], False):
-        if i >= args.login_retries:
-            raise TooManyLoginAttempts('Exceeded login attempts')
-        else:
-            i += 1
-            log.error('Failed to login to Pokemon Go with account %s. Trying again in %g seconds', account['username'], args.login_delay)
-            time.sleep(args.login_delay)
+    api.set_position(position[0], position[1], position[2])
+    while i < args.login_retries:
+        try:
+            api.set_authentication(provider = account['auth_service'], username = account['username'], password = account['password'])
+            break
+        except AuthException:
+            if i >= args.login_retries:
+                raise TooManyLoginAttempts('Exceeded login attempts')
+            else:
+                i += 1
+                log.error('Failed to login to Pokemon Go with account %s. Trying again in %g seconds', account['username'], args.login_delay)
+                time.sleep(args.login_delay)
 
     log.debug('Login for account %s successful', account['username'])
 
