@@ -68,11 +68,11 @@ class Pogom(Flask):
 
     def post_step_limit(self):
         args = get_args()
-        if not args.step_control:
+        if args.fixed_location or not args.step_control:
             return 'Step limit control is disabled', 403
         if request.args:
             limit = request.args.get('limit', type=int)
-            if (limit and limit > 0):
+            if limit and limit > 0:
                 config['STEP_LIMIT'] = limit
                 log.info('Step limit changed to: %s', config['STEP_LIMIT'])
                 # some dirty workaround to restart search thread
@@ -87,7 +87,7 @@ class Pogom(Flask):
         args = get_args()
         fixed_display = "none" if args.fixed_location else "inline"
         search_display = "inline" if args.search_control else "none"
-        step_display = "inline" if args.step_control else "none"
+        step_display = "inline" if args.step_control and not args.fixed_location else "none"
 
         return render_template('map.html',
                                lat=self.current_location[0],
