@@ -34,6 +34,8 @@ class Pogom(Flask):
         self.route("/search_control", methods=['POST'])(self.post_search_control)
         self.route("/step_limit", methods=['GET'])(self.get_step_limit)
         self.route("/step_limit", methods=['POST'])(self.post_step_limit)
+        self.route("/spawnpoints_only", methods=['GET'])(self.get_spawnpoints_only)
+        self.route("/spawnpoints_only", methods=['POST'])(self.post_spawnpoints_only)
         self.route("/stats", methods=['GET'])(self.get_stats)
 
     def set_search_control(self, control):
@@ -82,6 +84,28 @@ class Pogom(Flask):
         else:
             return jsonify({'message': 'invalid use of api'})
         return self.get_step_limit()
+
+    def get_spawnpoints_only(self):
+        return jsonify({'status': config['SPAWNPOINTS_ONLY']})
+
+    def post_spawnpoints_only(self):
+        args = get_args()
+        if args.fixed_location:
+            return 'Fixed location is enabled', 403
+        if request.args:
+            action = request.args.get('action', 'none')
+            if action == 'on':
+                config['SPAWNPOINTS_ONLY'] = True
+            elif action == 'off':
+                config['SPAWNPOINTS_ONLY'] = False
+            else:
+                return jsonify({'message': 'invalid action set'})
+            log.info('Spawnpoints only scan mode switched to: %s', config['SPAWNPOINTS_ONLY'])
+            # some dirty workaround to restart search thread
+            self.location_queue.put((self.current_location[0], self.current_location[1], 0))
+        else:
+            return jsonify({'message': 'invalid use of api'})
+        return self.get_spawnpoints_only()
 
     def fullmap(self):
         args = get_args()

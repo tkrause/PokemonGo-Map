@@ -126,6 +126,7 @@ def main():
         log.info('Parsing of Gyms disabled')
 
     config['STEP_LIMIT'] = args.step_limit
+    config['SPAWNPOINTS_ONLY'] = args.spawnpoints_only
     config['LOCALE'] = args.locale
     config['CHINA'] = args.china
 

@@ -979,6 +979,16 @@ function updateStepLimit () {
   })
 }
 
+var spawnpointsOnlyURI = 'spawnpoints_only'
+function spawnpointsOnlySet (action) {
+  $.post(spawnpointsOnlyURI + '?action=' + encodeURIComponent(action))
+}
+function updateSpawnpointsOnlyStatus () {
+  $.getJSON(spawnpointsOnlyURI).then(function (data) {
+    $('#spawnpoints-only-switch').prop('checked', data.status)
+  })
+}
+
 function initSidebar () {
   $('#gyms-switch').prop('checked', Store.get('showGyms'))
   $('#pokemon-switch').prop('checked', Store.get('showPokemon'))
@@ -998,6 +1008,7 @@ function initSidebar () {
   setInterval(updateSearchStatus, 5000)
 
   updateStepLimit()
+  updateSpawnpointsOnlyStatus()
 
   searchBox.addListener('places_changed', function () {
     var places = searchBox.getPlaces()
@@ -2057,6 +2068,10 @@ $(function () {
 
   $('#step-limit').change(function () {
     changeStepLimit(this.value)
+  })
+
+  $('#spawnpoints-only-switch').change(function () {
+    spawnpointsOnlySet(this.checked ? 'on' : 'off')
   })
 
   $('#start-at-user-location-switch').change(function () {
