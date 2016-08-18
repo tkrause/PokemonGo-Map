@@ -77,12 +77,12 @@ class Pogom(Flask):
             elif action == 'off':
                 config['SPAWNPOINTS_ONLY'] = False
             else:
-                return jsonify({'message':'invalid action set'})
+                return jsonify({'message': 'invalid action set'})
             log.info('Spawnpoints only scan mode switched to: %s', config['SPAWNPOINTS_ONLY'])
             # some dirty workaround to restart search thread
             self.location_queue.put((self.current_location[0], self.current_location[1], 0))
         else:
-            return jsonify({'message':'invalid use of api'})
+            return jsonify({'message': 'invalid use of api'})
         return self.get_spawnpoints_only()
 
     def fullmap(self):
@@ -113,7 +113,7 @@ class Pogom(Flask):
             else:
                 d['pokemons'] = Pokemon.get_active(swLat, swLng, neLat, neLng)
 
-        if request.args.get('pokestops', 'false') == 'true':
+        if request.args.get('pokestops', 'true') == 'true':
             d['pokestops'] = Pokestop.get_stops(swLat, swLng, neLat, neLng)
 
         if request.args.get('gyms', 'true') == 'true':

@@ -11,6 +11,7 @@ import logging
 import shutil
 import requests
 import platform
+import threading
 
 from . import config
 
@@ -121,6 +122,10 @@ def get_args():
     parser.add_argument('-nk', '--no-pokestops',
                         help='Disables PokeStops from the map (including parsing them into local db)',
                         action='store_true', default=False)
+    parser.add_argument('-ss', '--spawnpoint-scanning',
+                        help='Use spawnpoint scanning (instead of hex grid)', nargs='?', const='null.null', default=None)
+    parser.add_argument('--dump-spawnpoints', help='dump the spawnpoints from the db to json (only for use with -ss)',
+                        action='store_true', default=False)
     parser.add_argument('-pd', '--purge-data',
                         help='Clear pokemon from database this many hours after they disappear \
                         (0 to disable)', type=int, default=0)
@@ -136,6 +141,8 @@ def get_args():
                         type=int, default=5)
     parser.add_argument('-wh', '--webhook', help='Define URL(s) to POST webhook information to',
                         nargs='*', default=False, dest='webhooks')
+    parser.add_argument('--webhook-updates-only', help='Only send updates (pokémon & lured pokéstops)',
+                        action='store_true', default=False)
     parser.add_argument('--ssl-certificate', help='Path to SSL certificate file')
     parser.add_argument('--ssl-privatekey', help='Path to SSL private key file')
     parser.set_defaults(DEBUG=False)
@@ -215,7 +222,7 @@ def insert_mock_data(position):
 
     latitude, longitude = float(position[0]), float(position[1])
 
-    locations = [l for l in generate_location_steps((latitude, longitude), num_pokemon)]
+    locations = [l for l in generate_location_steps((latitude, longitude), num_pokemon, 0.07)]
     disappear_time = datetime.now() + timedelta(hours=1)
 
     detect_time = datetime.now()
@@ -305,16 +312,20 @@ def send_to_webhook(message_type, message):
         'message': message
     }
 
+    def send_msg_to_webhook(msg, webhook):
+        try:
+            requests.post(w, json=msg, timeout=(None, 1))
+        except requests.exceptions.ReadTimeout:
+            log.debug('Response timeout on webhook endpoint %s', w)
+        except requests.exceptions.RequestException as e:
+            log.debug(e)
+
     if args.webhooks:
         webhooks = args.webhooks
 
         for w in webhooks:
-            try:
-                requests.post(w, json=data, timeout=(None, 1))
-            except requests.exceptions.ReadTimeout:
-                log.debug('Response timeout on webhook endpoint %s', w)
-            except requests.exceptions.RequestException as e:
-                log.debug(e)
+            wh_thread = threading.Thread(target=send_msg_to_webhook, args=(data, w))
+            wh_thread.start()
 
 
 def get_encryption_lib_path():
