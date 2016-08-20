@@ -126,6 +126,7 @@ def main():
     if args.no_gyms:
         log.info('Parsing of Gyms disabled')
 
+    config['SPAWNPOINTS_ONLY'] = args.spawnpoints_only
     config['LOCALE'] = args.locale
     config['CHINA'] = args.china
 

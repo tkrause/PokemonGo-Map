@@ -35,6 +35,7 @@ from pgoapi.utilities import f2i
 from pgoapi import utilities as util
 from pgoapi.exceptions import AuthException
 
+from . import config
 from .models import parse_map, Pokemon
 from .fakePogoApi import FakePogoApi
 import terminalsize
@@ -321,7 +322,7 @@ def search_overseer_thread(args, new_location_queue, pause_bit, encryption_lib_p
             locations = list(generate_location_steps(current_location, args.step_limit, step_distance))
 
             # repopulate our spawn points
-            if args.spawnpoints_only:
+            if config['SPAWNPOINTS_ONLY']:
                 # We need to get all spawnpoints in range. This is a square 70m * step_limit * 2
                 sp_dist = 0.07 * 2 * args.step_limit
                 log.debug('Spawnpoint search radius: %f', sp_dist)
