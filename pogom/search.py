@@ -319,12 +319,12 @@ def search_overseer_thread(args, new_location_queue, pause_bit, encryption_lib_p
             log.info('Scan Distance is %.2f km', step_distance)
 
             # update our list of coords
-            locations = list(generate_location_steps(current_location, args.step_limit, step_distance))
+            locations = list(generate_location_steps(current_location, config['STEP_LIMIT'], step_distance))
 
             # repopulate our spawn points
             if config['SPAWNPOINTS_ONLY']:
                 # We need to get all spawnpoints in range. This is a square 70m * step_limit * 2
-                sp_dist = 0.07 * 2 * args.step_limit
+                sp_dist = 0.07 * 2 * config['STEP_LIMIT']
                 log.debug('Spawnpoint search radius: %f', sp_dist)
                 # generate coords of the midpoints of each edge of the square
                 south, west = get_new_coords(current_location, sp_dist, 180), get_new_coords(current_location, sp_dist, 270)

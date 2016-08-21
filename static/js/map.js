@@ -977,6 +977,16 @@ function updateSearchStatus () {
   })
 }
 
+var stepLimitURI = 'step_limit'
+function changeStepLimit (value) {
+  $.post(stepLimitURI + '?limit=' + encodeURIComponent(value))
+}
+function updateStepLimit () {
+  $.getJSON(stepLimitURI).then(function (data) {
+    $('#step-limit').prop('value', data.limit)
+  })
+}
+
 var spawnpointsOnlyURI = 'spawnpoints_only'
 function spawnpointsOnlySet (action) {
   $.post(spawnpointsOnlyURI + '?action=' + encodeURIComponent(action))
@@ -1005,6 +1015,7 @@ function initSidebar () {
   updateSearchStatus()
   setInterval(updateSearchStatus, 5000)
 
+  updateStepLimit()
   updateSpawnpointsOnlyStatus()
 
   searchBox.addListener('places_changed', function () {
@@ -2062,6 +2073,10 @@ $(function () {
 
   $('#search-switch').change(function () {
     searchControl(this.checked ? 'on' : 'off')
+  })
+
+  $('#step-limit').change(function () {
+    changeStepLimit(this.value)
   })
 
   $('#spawnpoints-only-switch').change(function () {
